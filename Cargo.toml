@@ -1,0 +1,27 @@
+[package]
+name = "egui-hook"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+startup = "0.1"
+log = "0.4"
+
+[dependencies.kiero4rs]
+git = "https://github.com/jac3km4/kiero4rs"
+rev = "v0.0.1"
+features = ["d3d11", "minhook"]
+
+[dependencies.egui-d3d11]
+git = "https://github.com/sy1ntexx/egui-d3d11"
+rev = "8ba057b"
+
+[dependencies.windows]
+version = "0.32"
+features = [
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_System_LibraryLoader"
+]
