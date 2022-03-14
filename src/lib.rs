@@ -56,9 +56,14 @@ macro_rules! egui_hook {
             wparam: $crate::WPARAM,
             lparam: $crate::LPARAM,
         ) -> $crate::LRESULT {
-            APP.as_ref().unwrap().wnd_proc(msg, wparam, lparam);
+            let app = APP.as_ref().unwrap();
 
-            $crate::CallWindowProcW(OLD_WNDPROC.unwrap(), hwnd, msg, wparam, lparam)
+            APP.as_ref().unwrap().wnd_proc(msg, wparam, lparam);
+            if app.state().is_active() {
+                $crate::LRESULT(0)
+            } else {
+                $crate::CallWindowProcW(OLD_WNDPROC.unwrap(), hwnd, msg, wparam, lparam)
+            }
         }
     };
 }
