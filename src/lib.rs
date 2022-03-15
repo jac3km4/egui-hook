@@ -1,5 +1,6 @@
 use std::mem::transmute;
 
+use egui::Context;
 pub use egui_d3d11::DirectX11App;
 use kiero4rs::ffi::{RenderType, Status};
 use kiero4rs::methods::D3D11;
@@ -12,16 +13,33 @@ pub use {log, startup};
 
 pub type PresentFn = unsafe extern "stdcall" fn(IDXGISwapChain, u32, u32) -> HRESULT;
 
+pub trait App {
+    fn render(&mut self, ctx: &Context);
+
+    fn setup(_ctx: &Context) {}
+
+    fn init() -> bool {
+        true
+    }
+    fn is_active(&self) -> bool {
+        true
+    }
+}
+
 #[macro_export]
 macro_rules! egui_hook {
-    ($app:ty, $ui:expr) => {
+    ($app:ty) => {
         static mut APP: Option<$crate::DirectX11App<$app>> = None;
 
         static mut OLD_WNDPROC: Option<$crate::WNDPROC> = None;
         static mut OLD_PRESENT: $crate::PresentFn = hook_present;
 
         $crate::startup::on_startup! {
-            std::thread::spawn(|| unsafe { $crate::init(hook_present, &mut OLD_PRESENT) });
+            std::thread::spawn(|| {
+                if <$app as $crate::App>::init() {
+                    unsafe { $crate::init(hook_present, &mut OLD_PRESENT) };
+                }
+            });
         }
 
         unsafe extern "stdcall" fn hook_present(
@@ -30,7 +48,12 @@ macro_rules! egui_hook {
             flags: u32,
         ) -> $crate::HRESULT {
             if APP.is_none() {
-                APP = Some($crate::DirectX11App::new_with_default($ui, &swap_chain));
+                let app = $crate::DirectX11App::new_with_default(
+                    |ctx, st| <$app as $crate::App>::render(st, ctx),
+                    &swap_chain,
+                );
+                <$app as $crate::App>::setup(&app.context());
+                APP = Some(app);
 
                 let desc = swap_chain.GetDesc().unwrap();
                 if desc.OutputWindow.is_invalid() {
@@ -59,7 +82,7 @@ macro_rules! egui_hook {
             let app = APP.as_ref().unwrap();
 
             APP.as_ref().unwrap().wnd_proc(msg, wparam, lparam);
-            if app.state().is_active() {
+            if <$app as $crate::App>::is_active(&app.state()) {
                 $crate::LRESULT(0)
             } else {
                 $crate::CallWindowProcW(OLD_WNDPROC.unwrap(), hwnd, msg, wparam, lparam)

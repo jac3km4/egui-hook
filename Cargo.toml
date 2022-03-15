@@ -9,6 +9,7 @@ crate-type = ["rlib"]
 [dependencies]
 startup = "0.1"
 log = "0.4"
+egui = "0.17"
 
 [dependencies.kiero4rs]
 git = "https://github.com/jac3km4/kiero4rs"
@@ -16,8 +17,8 @@ rev = "v0.0.1"
 features = ["d3d11", "minhook"]
 
 [dependencies.egui-d3d11]
-git = "https://github.com/sy1ntexx/egui-d3d11"
-rev = "8ba057b"
+git = "https://github.com/jac3km4/egui-d3d11"
+rev = "ae0ccd1"
 
 [dependencies.windows]
 version = "0.32"
