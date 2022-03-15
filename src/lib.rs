@@ -85,12 +85,25 @@ pub fn init(present: PresentFn, original: &mut PresentFn) {
 
 #[macro_export]
 macro_rules! import_foreign {
-    ($addr:expr, $name:ident() -> $ty:ty) => {
-        fn $name() -> $ty {
+    ($addr:expr, $ident:ident() -> $ret:ty) => {
+        fn $ident() -> $ret {
             let module = unsafe { $crate::GetModuleHandleA($crate::PSTR(std::ptr::null())) };
-            let ptr = module.0 + $addr;
-            let func: extern "C" fn() -> $ty = unsafe { std::mem::transmute(ptr) };
+            let func: extern "C" fn() -> $ret = unsafe { std::mem::transmute(module.0 + $addr) };
             func()
+        }
+    };
+    ($addr:expr, $ident:ident($a:ident: $at:ty) -> $ret:ty) => {
+        fn $ident($a: $at) -> $ret {
+            let module = unsafe { $crate::GetModuleHandleA($crate::PSTR(std::ptr::null())) };
+            let func: extern "C" fn($at) -> $ret = unsafe { std::mem::transmute(module.0 + $addr) };
+            func($a)
+        }
+    };
+    ($addr:expr, $ident:ident($a:ident: $at:ty, $b:ident: $bt:ty) -> $ret:ty) => {
+        fn $ident($a: $at, $b: $bt) -> $ret {
+            let module = unsafe { $crate::GetModuleHandleA($crate::PSTR(std::ptr::null())) };
+            let func: extern "C" fn($at, $bt) -> $ret = unsafe { std::mem::transmute(module.0 + $addr) };
+            func($a, $b)
         }
     };
 }
