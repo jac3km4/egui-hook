@@ -16,7 +16,7 @@ pub type PresentFn = unsafe extern "stdcall" fn(IDXGISwapChain, u32, u32) -> HRE
 pub trait App {
     fn render(&mut self, ctx: &Context);
 
-    fn setup(_ctx: &Context) {}
+    fn setup(&mut self, _ctx: &Context) {}
 
     fn init() -> bool {
         true
@@ -52,7 +52,7 @@ macro_rules! egui_hook {
                     |ctx, st| <$app as $crate::App>::render(st, ctx),
                     &swap_chain,
                 );
-                <$app as $crate::App>::setup(&app.context());
+                <$app as $crate::App>::setup(&mut app.state(), &app.context());
                 APP = Some(app);
 
                 let desc = swap_chain.GetDesc().unwrap();
@@ -104,29 +104,4 @@ pub fn init(present: PresentFn, original: &mut PresentFn) {
             log::error!("Failed to bind the present function: {:?}", other);
         }
     }
-}
-
-#[macro_export]
-macro_rules! import_foreign {
-    ($addr:expr, $ident:ident() -> $ret:ty) => {
-        fn $ident() -> $ret {
-            let module = unsafe { $crate::GetModuleHandleA($crate::PSTR(std::ptr::null())) };
-            let func: extern "C" fn() -> $ret = unsafe { std::mem::transmute(module.0 + $addr) };
-            func()
-        }
-    };
-    ($addr:expr, $ident:ident($a:ident: $at:ty) -> $ret:ty) => {
-        fn $ident($a: $at) -> $ret {
-            let module = unsafe { $crate::GetModuleHandleA($crate::PSTR(std::ptr::null())) };
-            let func: extern "C" fn($at) -> $ret = unsafe { std::mem::transmute(module.0 + $addr) };
-            func($a)
-        }
-    };
-    ($addr:expr, $ident:ident($a:ident: $at:ty, $b:ident: $bt:ty) -> $ret:ty) => {
-        fn $ident($a: $at, $b: $bt) -> $ret {
-            let module = unsafe { $crate::GetModuleHandleA($crate::PSTR(std::ptr::null())) };
-            let func: extern "C" fn($at, $bt) -> $ret = unsafe { std::mem::transmute(module.0 + $addr) };
-            func($a, $b)
-        }
-    };
 }
